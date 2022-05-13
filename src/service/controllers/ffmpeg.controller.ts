@@ -4,6 +4,8 @@
 
 import {spawn} from 'child_process';
 import {videoStatusController} from './videostatus.controller';
+import {writeFile} from 'node:fs';
+import path from 'path';
 
 const AsyncFFMPEG = ( principalCommand: any, args: any, options: any ) =>
   new Promise((resolve, reject)=> {
@@ -113,12 +115,11 @@ class FFMPEGMANAGER {
   }
 }
 
-// ffmpeg -f concat -safe 0 -i mylist.txt -c copy output.mp4
-
 class FFMPEGCONCAT {
-  async ffmpegConcat(listOfVideoSources: string, outputVideoSrc: string) {
+  async ffmpegConcat(fileInput:string, outputVideoSrc: string) {
     try {
-      const inputVideosSrc = `${listOfVideoSources}`;
+      const inputVideosSrc = fileInput;
+
       const principalCommand = 'ffmpeg';
       const args = [
         '-f',
@@ -129,33 +130,47 @@ class FFMPEGCONCAT {
         `${inputVideosSrc}`,
         '-c',
         'copy',
-        `${outputVideoSrc}`];
+        `${outputVideoSrc}.mp4`];
       const options = {
         shell: true,
       };
-
       await AsyncFFMPEG(principalCommand, args, options);
-      return outputVideoSrc;
+
+      return `${outputVideoSrc}.mp4`;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async createFileTxt(arrayOfVideos:Array<string>) {
+    try {
+      const [path1, path2] = arrayOfVideos;
+      const commandTxt = 'file ' + path1 + '\nfile ' + path2;
+      const outputFile = 'output3.txt';
+      const outputPath = path.join(__dirname, '../../internalapp', outputFile);
+
+      writeFile(outputPath, commandTxt, function(err) {
+        if (err) throw err;
+        console.log('File is created successfully.');
+      });
+
+      return outputPath;
     } catch (error) {
       throw error;
     }
   }
 
   async processVideo(
-      listOfVideoSources: string,
-      outputVideoSrc: string,
-      context: any,
-      videoSourceId: string) {
-    // // generar mas status de procesamiento de video
+      arrayFilesVideos:Array<string>,
+      outputVideoSrc: string) {
+    const arrayVideos = [];
 
-    await videoStatusController.createVideoStatus(
-        videoSourceId,
-        context,
-        'doing',
-    );
+    for (let i = 0; i < 2; i++) {
+      const outPutPath = await this.ffmpegConcat(arrayFilesVideos[i], outputVideoSrc + (i + 1));
+      arrayVideos.push(outPutPath);
+    }
 
-    const outPutPath = await this.ffmpegConcat(listOfVideoSources, outputVideoSrc);
-    return outPutPath;
+    return arrayVideos;
   } catch(error:any) {
     throw error;
   }

@@ -1,31 +1,22 @@
-import {ffmpegConcatController, ffmpegController} from './ffmpeg.controller';
+import {ffmpegConcatController} from './ffmpeg.controller';
+import {videoFlowController} from './videoflow.controller';
 import {videosourceController} from './videosources.controller';
 import {videoStatusController} from './videostatus.controller';
 
 
 class TASKFLOW {
-  async initProcess(listOfVideos:string) {
+  async initProcess(arrayFilesVideos:Array<string>) {
     try {
-      const context = {
-        userId: '6275bb583af43b4205af521a',
-      };
+      const pathOutput = '/Users/rosi/Documents/Joan/Bootcamp-Krowdy/01.BackEnd/Tarea/src/internalapp/output';
 
-      const VideosSrc = await videosourceController.createVideoSource(listOfVideos, context);
+      // Unir los videos de dos archivos txt
+      const pathsVideos = await ffmpegConcatController.processVideo(arrayFilesVideos, pathOutput);
 
-      await videoStatusController.createVideoStatus(VideosSrc._id, context, 'pending');
+      // Crear archivo con los videos nuevos
+      const txtFile = await ffmpegConcatController.createFileTxt(pathsVideos);
 
-      let isVideoAvailable = false;
-      try {
-        await ffmpegConcatController.processVideo(listOfVideos, VideosSrc.fileSources.tmp, context, VideosSrc._id);
-      } catch (error) {
-        await videoStatusController.createVideoStatus(VideosSrc._id, context, 'failed');
-        isVideoAvailable = true;
-      }
-      await videoStatusController.createVideoStatus(VideosSrc._id, context, 'completed');
-      if (isVideoAvailable) {
-        return VideosSrc;
-      };
-      return {};
+      // Unir videos del nuevo archivo txt
+      await ffmpegConcatController.ffmpegConcat(txtFile, pathOutput);
     } catch (err) {
       throw err;
     }

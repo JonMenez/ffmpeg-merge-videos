@@ -6,9 +6,9 @@ const routerTaskInstance = new Router();
 
 routerTaskInstance.post('/processvideo', async (req, res) => {
   try {
-    const {listOfVideos} = req.body;
-    res.json({listOfVideos});
-    await TaskController.initProcess(listOfVideos);
+    const arrayFilesVideos = req.body.inputVideos;
+    res.json(arrayFilesVideos);
+    await TaskController.initProcess(arrayFilesVideos);
   } catch (error) {
     let errorMessage = 'Failed to do something exceptional';
     if (error instanceof Error) {
